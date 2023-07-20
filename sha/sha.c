@@ -24,6 +24,7 @@
 /* NIST's proposed modification to SHA of 7/11/94 may be */
 /* activated by defining USE_MODIFIED_SHA */
 
+#include "sha.h"
 
 /* SHA f()-functions */
 
@@ -46,6 +47,11 @@
 #define FUNC(n,i)						\
     temp = ROT32(A,5) + f##n(B,C,D) + E + W[i] + CONST##n;	\
     E = D; D = C; C = ROT32(B,30); B = A; A = temp
+
+
+INT32 sha_info_digest[5];	/* message digest */
+INT32 sha_info_count_lo, sha_info_count_hi;	/* 64-bit bit count */
+INT32 sha_info_data[16];
 
 void
 local_memset (INT32 * s, int c, int n, int e)
@@ -201,17 +207,10 @@ sha_final ()
 
 /* compute the SHA digest of a FILE stream */
 void
-sha_stream ()
+sha_stream (INT32 _sha_info_digest[5], const BYTE *p, int i)
 {
-  int i, j;
-  const BYTE *p;
-
   sha_init ();
-  for (j = 0; j < VSIZE; j++)
-    {
-      i = in_i[j];
-      p = &indata[j][0];
-      sha_update (p, i);
-    }
+  sha_update (p, i);
   sha_final ();
+  local_memcpy(_sha_info_digest, sha_info_digest, 5 * sizeof(INT32));
 }

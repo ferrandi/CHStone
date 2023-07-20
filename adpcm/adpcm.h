@@ -16,33 +16,21 @@
 |    4. Please follow the copyright of each benchmark program.             |
 +--------------------------------------------------------------------------+
 */
-/*
- * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
- * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
- * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
- */
+#ifndef ADPCM_H
+#define ADPCM_H
 
-/*$Header: /home/kbs/jutta/src/gsm/gsm-1.0/inc/RCS/private.h,v 1.4 1994/11/28 20:25:03 jutta Exp $*/
+void encode (int*, int, int);
+void decode (int*, int*, int);
+int filtez (int *bpl, int *dlt);
+void upzero (int dlt, int *dlti, int *bli);
+int filtep (int rlt1, int al1, int rlt2, int al2);
+int quantl (int el, int detl);
+int logscl (int il, int nbl);
+int scalel (int nbl, int shift_constant);
+int uppol2 (int al1, int al2, int plt, int plt1, int plt2);
+int uppol1 (int al1, int apl2, int plt, int plt1);
+int logsch (int ih, int nbh);
+void reset ();
+void adpcm(int out[restrict 2], const int in[restrict 2], unsigned char mode);
 
-#ifndef	PRIVATE_H
-#define	PRIVATE_H
-
-typedef short word;		/* 16 bit signed int    */
-typedef long longword;		/* 32 bit signed int    */
-
-#define N 160
-#define M 8
-
-#define	MIN_WORD	((-32767)-1)
-#define	MAX_WORD	( 32767)
-
-#define	SASR(x, by)	((x) >> (by))
-
-#define GSM_MULT_R(a, b)	gsm_mult_r(a, b)
-#define GSM_MULT(a, b)		gsm_mult(a, b)
-#define GSM_ADD(a, b)		gsm_add(a, b)
-#define GSM_ABS(a)		gsm_abs(a)
-
-void Gsm_LPC_Analysis(word* s, word* LARc);
-
-#endif /* PRIVATE_H */
+#endif /* ADPCM_H */

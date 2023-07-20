@@ -61,9 +61,6 @@
  */
 #include <stdio.h>
 
-
-int main_result;
-
 #include "aes.h"
 #include "aes_enc.c"
 #include "aes_dec.c"
@@ -74,6 +71,30 @@ int main_result;
 int
 aes_main (void)
 {
+  int i, main_result = 0;
+
+/*
++--------------------------------------------------------------------------+
+| * Test Vector (added for CHStone)                                        |
+|     out_enc_statemt : expected output data for "encrypt"                 |
++--------------------------------------------------------------------------+
+*/
+  const int out_enc_statemt[16] =
+    { 0x39, 0x25, 0x84, 0x1d, 0x2, 0xdc, 0x9, 0xfb, 0xdc, 0x11, 0x85, 0x97,
+    0x19, 0x6a, 0xb, 0x32
+  };
+
+/*
++--------------------------------------------------------------------------+
+| * Test Vector (added for CHStone)                                        |
+|     out_enc_statemt : expected output data for "decrypt"                 |
++--------------------------------------------------------------------------+
+*/
+  const int out_dec_statemt[16] =
+    { 0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d, 0x31, 0x31, 0x98, 0xa2,
+    0xe0, 0x37, 0x7, 0x34
+  };
+
 /*
 +--------------------------------------------------------------------------+
 | * Test Vectors (added for CHStone)                                       |
@@ -115,15 +136,39 @@ aes_main (void)
   key[15] = 60;
 
   encrypt (statemt, key, 128128);
+  
+  printf ("encrypted message \t");
+  for (i = 0; i < nb * 4; ++i)
+    {
+      if (statemt[i] < 16)
+	printf ("0");
+      printf ("%x", statemt[i]);
+    }
+
+  for (i = 0; i < 16; i++)
+    main_result += (statemt[i] != out_enc_statemt[i]);
+  
   decrypt (statemt, key, 128128);
-  return 0;
+
+  printf ("\ndecrypted message\t");
+  for (i = 0; i < ((type % 1000) / 8); ++i)
+    {
+      if (statemt[i] < 16)
+	printf ("0");
+      printf ("%x", statemt[i]);
+    }
+
+  for (i = 0; i < 16; i++)
+    main_result += (statemt[i] != out_dec_statemt[i]);
+  
+  return main_result;
 }
 
 int
 main ()
 {
-      main_result = 0;
-      aes_main ();
+      int main_result = 0;
+      main_result = aes_main ();
       printf ("\n%d\n", main_result);
       return main_result;
     }

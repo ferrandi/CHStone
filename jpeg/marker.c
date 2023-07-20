@@ -575,12 +575,12 @@ read_markers (unsigned char *buf)
 	  unread_marker = next_marker ();
 	}
 
-      printf ("\nmarker = 0x%x\n", unread_marker);
-
-      if (unread_marker != out_unread_marker[i_marker++])
-	{
-		main_result++;
-	}
+//      printf ("\nmarker = 0x%x\n", unread_marker);
+//
+//      if (unread_marker != out_unread_marker[i_marker++])
+//	{
+//		main_result++;
+//	}
 
 
       switch (unread_marker)

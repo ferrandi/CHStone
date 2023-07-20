@@ -46,11 +46,11 @@
  */
 
 int
-Get_motion_code ()
+Get_motion_code (const unsigned char inRdbfr[2048])
 {
   int code;
 
-  if (Get_Bits1 ())
+  if (Get_Bits1 (inRdbfr))
     {
       return 0;
     }
@@ -58,34 +58,34 @@ Get_motion_code ()
   if ((code = Show_Bits (9)) >= 64)
     {
       code >>= 6;
-      Flush_Buffer (MVtab0[code][1]);
+      Flush_Buffer (MVtab0[code][1], inRdbfr);
 
-      return Get_Bits1 ()? -MVtab0[code][0] : MVtab0[code][0];
+      return Get_Bits1 (inRdbfr)? -MVtab0[code][0] : MVtab0[code][0];
     }
 
   if (code >= 24)
     {
       code >>= 3;
-      Flush_Buffer (MVtab1[code][1]);
+      Flush_Buffer (MVtab1[code][1], inRdbfr);
 
-      return Get_Bits1 ()? -MVtab1[code][0] : MVtab1[code][0];
+      return Get_Bits1 (inRdbfr)? -MVtab1[code][0] : MVtab1[code][0];
     }
 
   if ((code -= 12) < 0)
     return 0;
 
-  Flush_Buffer (MVtab2[code][1]);
-  return Get_Bits1 ()? -MVtab2[code][0] : MVtab2[code][0];
+  Flush_Buffer (MVtab2[code][1], inRdbfr);
+  return Get_Bits1 (inRdbfr)? -MVtab2[code][0] : MVtab2[code][0];
 }
 
 /* get differential motion vector (for dual prime prediction) */
 int
-Get_dmvector ()
+Get_dmvector (const unsigned char inRdbfr[2048])
 {
 
-  if (Get_Bits (1))
+  if (Get_Bits (1, inRdbfr))
     {
-      return Get_Bits (1) ? -1 : 1;
+      return Get_Bits (1, inRdbfr) ? -1 : 1;
     }
   else
     {

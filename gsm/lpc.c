@@ -311,8 +311,8 @@ Quantization_and_coding (register word * LAR /* [0..7]       IN/OUT  */ )
 }
 
 void
-Gsm_LPC_Analysis (word * s /* 0..159 signals       IN/OUT  */ ,
-		  word * LARc /* 0..7   LARc's        OUT     */ )
+Gsm_LPC_Analysis (word s[N] /* 0..159 signals       IN/OUT  */ ,
+		  word LARc[M] /* 0..7   LARc's        OUT     */ )
 {
   longword L_ACF[9];
 

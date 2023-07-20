@@ -77,7 +77,7 @@ return n;
 }
 
 void
-Fill_Buffer ()
+Fill_Buffer (const unsigned char inRdbfr[2048])
 {
   int Buffer_Level;
   unsigned char *p;
@@ -86,9 +86,6 @@ Fill_Buffer ()
 
   Buffer_Level = read (ld_Rdbfr, inRdbfr, 2048);
   ld_Rdptr = ld_Rdbfr;
-
-  if (System_Stream_Flag)
-    ld_Rdmax -= 2048;
 
 
   /* end of the bitstream file */
@@ -124,17 +121,18 @@ Show_Bits (N)
 /* return next bit (could be made faster than Get_Bits(1)) */
 
 unsigned int
-Get_Bits1 ()
+Get_Bits1 (const unsigned char inRdbfr[2048])
 {
-  return Get_Bits (1);
+  return Get_Bits (1, inRdbfr);
 }
 
 
 /* advance by n bits */
 
 void
-Flush_Buffer (N)
+Flush_Buffer (N, inRdbfr)
      int N;
+     const unsigned char inRdbfr[2048];
 {
   int Incnt;
 
@@ -168,7 +166,7 @@ Flush_Buffer (N)
 	  do
 	    {
 	      if (ld_Rdptr >= ld_Rdbfr + 2048)
-		Fill_Buffer ();
+		Fill_Buffer (inRdbfr);
 #ifdef RAND_VAL 
 	/* N is between 0 and 20 with realistic input sets, while it may become larger than the width of the integer type when using randomly generated input sets which are used in the contained input set. The following is to avoid this.  */
 	      ld_Bfr |= *ld_Rdptr++ << ((24 - Incnt)%20);
@@ -187,13 +185,14 @@ Flush_Buffer (N)
 /* return next n bits (right adjusted) */
 
 unsigned int
-Get_Bits (N)
+Get_Bits (N, inRdbfr)
      int N;
+     const unsigned char inRdbfr[2048];
 {
   unsigned int Val;
 
   Val = Show_Bits (N);
-  Flush_Buffer (N);
+  Flush_Buffer (N, inRdbfr);
 
   return Val;
 }

@@ -76,11 +76,6 @@
 #include <stdio.h>
 
 #include "blowfish.h"
-#include "bf_locl.h"
-#include "bf_pi.h"
-#include "bf_skey.c"
-#include "bf_cfb64.c"
-#include "bf_enc.c"
 
 /*
 +--------------------------------------------------------------------------+
@@ -816,10 +811,8 @@ const unsigned char out_key[KEYSIZE] = {
 int
 blowfish_main ()
 {
-  unsigned char ukey[8];
   unsigned char indata[N];
   unsigned char outdata[N];
-  unsigned char ivec[8];
   int num;
   int i, j, k, l;
   int encordec;
@@ -828,21 +821,16 @@ blowfish_main ()
   num = 0;
   k = 0;
   l = 0;
-  encordec = 1;
+  encordec = BF_ENCRYPT;
   check = 0;
-  for (i = 0; i < 8; i++)
-    {
-      ukey[i] = 0;
-      ivec[i] = 0;
-    }
-  BF_set_key (8, ukey);
   i = 0;
+  BF_cfb64_encrypt (indata, outdata, 0, &num, BF_RESET);
   while (k < KEYSIZE)
     {
       while (k < KEYSIZE && i < N)
 	indata[i++] = in_key[k++];
 
-      BF_cfb64_encrypt (indata, outdata, i, ivec, &num, encordec);
+      BF_cfb64_encrypt (indata, outdata, i, &num, encordec);
 
       for (j = 0; j < i; j++)
 	check += (outdata[j] != out_key[l++]);

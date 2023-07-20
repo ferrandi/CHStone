@@ -326,22 +326,10 @@ const int outPMV[2][2][2] =
 const int outmvfs[2][2] = { {0, 200}, {0, 240} };
 
 int evalue;
-#include "config.h"
-#include "global.h"
-#include "getbits.c"
-#include "getvlc.h"
-#include "getvlc.c"
-#include "motion.c"
 
-void
-Initialize_Buffer ()
-{
-  ld_Incnt = 0;
-  ld_Rdptr = ld_Rdbfr + 2048;
-  ld_Rdmax = ld_Rdptr;
-  ld_Bfr = 68157440;
-  Flush_Buffer (0);		/* fills valid data into bfr */
-}
+void motion_vectors (const unsigned char inRdbfr[2048], int PMV[2][2][2], int dmvector[2], 
+		int motion_vertical_field_select[2][2], int s, int motion_vector_count, int mv_format, 
+		int h_r_size, int v_r_size, int dmv, int mvscale);
 
 int
 main ()
@@ -355,7 +343,6 @@ main ()
 
       main_result = 0;
       evalue = 0;
-      System_Stream_Flag = 0;
       s = 0;
       motion_vector_count = 1;
       mv_format = 0;
@@ -374,8 +361,7 @@ main ()
 	    }
 	}
 
-      Initialize_Buffer ();
-      motion_vectors (PMV, dmvector, motion_vertical_field_select, s,
+      motion_vectors (inRdbfr, PMV, dmvector, motion_vertical_field_select, s,
 		      motion_vector_count, mv_format, h_r_size, v_r_size, dmv,
 		      mvscale);
 

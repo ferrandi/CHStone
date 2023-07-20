@@ -79,5 +79,5 @@ void InversShiftRow_ByteSub (int *, int);
 int MixColumn_AddRoundKey (int *, int, int);
 int AddRoundKey_InversMixColumn (int *, int, int);
 int AddRoundKey (int *, int, int);
-int encrypt (int *, int *, int);
-int decrypt (int *, int *, int);
+void encrypt (int *, int *, int);
+void decrypt (int *, int *, int);

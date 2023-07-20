@@ -45,30 +45,48 @@
  *
  */
 
+#include "config.h"
+#include "global.h"
+#include "getbits.c"
+#include "getvlc.h"
+#include "getvlc.c"
+
 /* private prototypes */
 static void decode_motion_vector
 _ANSI_ARGS_ ((int *pred, int r_size, int motion_code,
 	      int motion_residualesidual, int full_pel_vector));
 
+void
+Initialize_Buffer (const unsigned char inRdbfr[2048])
+{
+  ld_Incnt = 0;
+  ld_Rdptr = ld_Rdbfr + 2048;
+  ld_Rdmax = ld_Rdptr;
+  ld_Bfr = 68157440;
+  Flush_Buffer (0, inRdbfr);		/* fills valid data into bfr */
+}
+
 /* ISO/IEC 13818-2 sections 6.2.5.2, 6.3.17.2, and 7.6.3: Motion vectors */
 void
-motion_vectors (PMV, dmvector, motion_vertical_field_select, s,
+motion_vectors (inRdbfr, PMV, dmvector, motion_vertical_field_select, s,
 		motion_vector_count, mv_format, h_r_size, v_r_size, dmv,
 		mvscale)
+     const unsigned char inRdbfr[2048];
      int PMV[2][2][2];
      int dmvector[2];
      int motion_vertical_field_select[2][2];
      int s, motion_vector_count, mv_format, h_r_size, v_r_size, dmv, mvscale;
 {
+  Initialize_Buffer (inRdbfr);
   if (motion_vector_count == 1)
     {
       if (mv_format == MV_FIELD && !dmv)
 	{
 	  motion_vertical_field_select[1][s] =
-	    motion_vertical_field_select[0][s] = Get_Bits (1);
+	    motion_vertical_field_select[0][s] = Get_Bits (1, inRdbfr);
 	}
 
-      motion_vector (PMV[0][s], dmvector, h_r_size, v_r_size, dmv, mvscale,
+      motion_vector (inRdbfr, PMV[0][s], dmvector, h_r_size, v_r_size, dmv, mvscale,
 		     0);
 
       /* update other motion vector predictors */
@@ -77,14 +95,14 @@ motion_vectors (PMV, dmvector, motion_vertical_field_select, s,
     }
   else
     {
-      motion_vertical_field_select[0][s] = Get_Bits (1);
+      motion_vertical_field_select[0][s] = Get_Bits (1, inRdbfr);
 
-      motion_vector (PMV[0][s], dmvector, h_r_size, v_r_size, dmv, mvscale,
+      motion_vector (inRdbfr, PMV[0][s], dmvector, h_r_size, v_r_size, dmv, mvscale,
 		     0);
 
-      motion_vertical_field_select[1][s] = Get_Bits (1);
+      motion_vertical_field_select[1][s] = Get_Bits (1, inRdbfr);
 
-      motion_vector (PMV[1][s], dmvector, h_r_size, v_r_size, dmv, mvscale,
+      motion_vector (inRdbfr, PMV[1][s], dmvector, h_r_size, v_r_size, dmv, mvscale,
 		     0);
     }
 }
@@ -92,8 +110,9 @@ motion_vectors (PMV, dmvector, motion_vertical_field_select, s,
 /* get and decode motion vector and differential motion vector 
    for one prediction */
 void
-motion_vector (PMV, dmvector, h_r_size, v_r_size, dmv, mvscale,
+motion_vector (inRdbfr, PMV, dmvector, h_r_size, v_r_size, dmv, mvscale,
 	       full_pel_vector)
+     const unsigned char inRdbfr[2048];
      int *PMV;
      int *dmvector;
      int h_r_size;
@@ -107,22 +126,22 @@ motion_vector (PMV, dmvector, h_r_size, v_r_size, dmv, mvscale,
 
   /* horizontal component */
   /* ISO/IEC 13818-2 Table B-10 */
-  motion_code = Get_motion_code ();
+  motion_code = Get_motion_code (inRdbfr);
 
   motion_residual = (h_r_size != 0
-		     && motion_code != 0) ? Get_Bits (h_r_size) : 0;
+		     && motion_code != 0) ? Get_Bits (h_r_size, inRdbfr) : 0;
 
   decode_motion_vector (&PMV[0], h_r_size, motion_code, motion_residual,
 			full_pel_vector);
 
   if (dmv)
-    dmvector[0] = Get_dmvector ();
+    dmvector[0] = Get_dmvector (inRdbfr);
 
 
   /* vertical component */
-  motion_code = Get_motion_code ();
+  motion_code = Get_motion_code (inRdbfr);
   motion_residual = (v_r_size != 0
-		     && motion_code != 0) ? Get_Bits (v_r_size) : 0;
+		     && motion_code != 0) ? Get_Bits (v_r_size, inRdbfr) : 0;
 
   if (mvscale)
     PMV[1] >>= 1;		/* DIV 2 */
@@ -134,7 +153,7 @@ motion_vector (PMV, dmvector, h_r_size, v_r_size, dmv, mvscale,
     PMV[1] <<= 1;
 
   if (dmv)
-    dmvector[1] = Get_dmvector ();
+    dmvector[1] = Get_dmvector (inRdbfr);
 
 }
 

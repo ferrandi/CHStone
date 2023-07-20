@@ -62,20 +62,7 @@
 /*                                                                       */
 /*                                                                       */
 /*************************************************************************/
-#include <stdio.h>
-
-int encode (int, int);
-void decode (int);
-int filtez (int *bpl, int *dlt);
-void upzero (int dlt, int *dlti, int *bli);
-int filtep (int rlt1, int al1, int rlt2, int al2);
-int quantl (int el, int detl);
-int logscl (int il, int nbl);
-int scalel (int nbl, int shift_constant);
-int uppol2 (int al1, int al2, int plt, int plt1, int plt2);
-int uppol1 (int al1, int apl2, int plt, int plt1);
-int logsch (int ih, int nbh);
-void reset ();
+#include "adpcm.h"
 
 /* G722 C code */
 
@@ -94,9 +81,6 @@ int xl, xh;
 
 /* variables for receive quadrature mirror filter here */
 int accumc[11], accumd[11];
-
-/* outputs of decode() */
-int xout1, xout2;
 
 int xs, xd;
 
@@ -244,8 +228,8 @@ abs (int n)
   return m;
 }
 
-int
-encode (int xin1, int xin2)
+void
+encode (int* retval, int xin1, int xin2)
 {
   int i;
   const int *h_ptr;
@@ -392,13 +376,13 @@ encode (int xin1, int xin2)
   ph1 = ph;
 
 /* multiplex ih and il to get signals together */
-  return (il | (ih << 6));
+  *retval = (il | (ih << 6));
 }
 
 /* decode function, result in xout1 and xout2 */
 
 void
-decode (int input)
+decode (int* xout1, int* xout2, int input)
 {
   int i;
   long int xa1, xa2;		/* qmf accumulators */
@@ -519,8 +503,8 @@ decode (int input)
   xa2 += (long) (*ad_ptr) * (*h_ptr++);
 
 /* scale by 2^14 */
-  xout1 = xa1 >> 14;
-  xout2 = xa2 >> 14;
+  *xout1 = xa1 >> 14;
+  *xout2 = xa2 >> 14;
 
 /* update delay lines */
   ac_ptr1 = ac_ptr - 1;
@@ -572,6 +556,25 @@ reset ()
       accumc[i] = 0;
       accumd[i] = 0;
     }
+}
+
+void adpcm(int out[restrict 2], const int in[restrict 2], unsigned char mode)
+{
+  if(mode == 2)
+  {
+      reset();
+  }
+  else
+  {
+    if(mode)
+    {
+      encode(out, in[0], in[1]);
+    }
+    else
+    {
+      decode(&out[0], &out[1], *in);
+    }
+  }
 }
 
 /* filtez - compute predictor output signal (zero section) */
@@ -762,121 +765,3 @@ logsch (int ih, int nbh)
     nbh = 22528;
   return (nbh);
 }
-
-/*
-+--------------------------------------------------------------------------+
-| * Test Vectors (added for CHStone)                                       |
-|     test_data : input data                                               |
-|     test_compressed : expected output data for "encode"                  |
-|     test_result : expected output data for "decode"                      |
-+--------------------------------------------------------------------------+
-*/
-
-#define SIZE 100
-#define IN_END 100
-
-const int test_data[SIZE] = {
-  0x44, 0x44, 0x44, 0x44, 0x44,
-  0x44, 0x44, 0x44, 0x44, 0x44,
-  0x44, 0x44, 0x44, 0x44, 0x44,
-  0x44, 0x44, 0x43, 0x43, 0x43,
-  0x43, 0x43, 0x43, 0x43, 0x42,
-  0x42, 0x42, 0x42, 0x42, 0x42,
-  0x41, 0x41, 0x41, 0x41, 0x41,
-  0x40, 0x40, 0x40, 0x40, 0x40,
-  0x40, 0x40, 0x40, 0x3f, 0x3f,
-  0x3f, 0x3f, 0x3f, 0x3e, 0x3e,
-  0x3e, 0x3e, 0x3e, 0x3e, 0x3d,
-  0x3d, 0x3d, 0x3d, 0x3d, 0x3d,
-  0x3c, 0x3c, 0x3c, 0x3c, 0x3c,
-  0x3c, 0x3c, 0x3c, 0x3c, 0x3b,
-  0x3b, 0x3b, 0x3b, 0x3b, 0x3b,
-  0x3b, 0x3b, 0x3b, 0x3b, 0x3b,
-  0x3b, 0x3b, 0x3b, 0x3b, 0x3b,
-  0x3b, 0x3b, 0x3b, 0x3b, 0x3b,
-  0x3b, 0x3b, 0x3c, 0x3c, 0x3c,
-  0x3c, 0x3c, 0x3c, 0x3c, 0x3c
-};
-int compressed[SIZE], result[SIZE];
-const int test_compressed[SIZE] = {
-  0xfd, 0xde, 0x77, 0xba, 0xf2, 
-  0x90, 0x20, 0xa0, 0xec, 0xed, 
-  0xef, 0xf1, 0xf3, 0xf4, 0xf5, 
-  0xf5, 0xf5, 0xf5, 0xf6, 0xf6, 
-  0xf6, 0xf7, 0xf8, 0xf7, 0xf8, 
-  0xf7, 0xf9, 0xf8, 0xf7, 0xf9, 
-  0xf8, 0xf8, 0xf6, 0xf8, 0xf8, 
-  0xf7, 0xf9, 0xf9, 0xf9, 0xf8, 
-  0xf7, 0xfa, 0xf8, 0xf8, 0xf7, 
-  0xfb, 0xfa, 0xf9, 0xf8, 0xf8
-};
-const int test_result[SIZE] = {
-  0, 0xffffffff, 0xffffffff, 0, 0, 
-  0xffffffff, 0, 0, 0xffffffff, 0xffffffff, 
-  0, 0, 0x1, 0x1, 0, 
-  0xfffffffe, 0xffffffff, 0xfffffffe, 0, 0xfffffffc, 
-  0x1, 0x1, 0x1, 0xfffffffb, 0x2, 
-  0x2, 0x3, 0xb, 0x14, 0x14, 
-  0x16, 0x18, 0x20, 0x21, 0x26, 
-  0x27, 0x2e, 0x2f, 0x33, 0x32, 
-  0x35, 0x33, 0x36, 0x34, 0x37, 
-  0x34, 0x37, 0x35, 0x38, 0x36, 
-  0x39, 0x38, 0x3b, 0x3a, 0x3f, 
-  0x3f, 0x40, 0x3a, 0x3d, 0x3e, 
-  0x41, 0x3c, 0x3e, 0x3f, 0x42, 
-  0x3e, 0x3b, 0x37, 0x3b, 0x3e, 
-  0x41, 0x3b, 0x3b, 0x3a, 0x3b, 
-  0x36, 0x39, 0x3b, 0x3f, 0x3c, 
-  0x3b, 0x37, 0x3b, 0x3d, 0x41, 
-  0x3d, 0x3e, 0x3c, 0x3e, 0x3b, 
-  0x3a, 0x37, 0x3b, 0x3e, 0x41, 
-  0x3c, 0x3b, 0x39, 0x3a, 0x36
-};
-
-void
-adpcm_main ()
-{
-  int i, j;
-
-/* reset, initialize required memory */
-  reset ();
-
-  j = 10;
-
-  for (i = 0; i < IN_END; i += 2)
-    {
-      compressed[i / 2] = encode (test_data[i], test_data[i + 1]);
-    }
-  for (i = 0; i < IN_END; i += 2)
-    {
-      decode (compressed[i / 2]);
-      result[i] = xout1;
-      result[i + 1] = xout2;
-    }
-}
-
-int
-main ()
-{
-  int i;
-  int main_result;
-
-      main_result = 0;
-      adpcm_main ();
-      for (i = 0; i < IN_END / 2; i++)
-	{
-	  if (compressed[i] != test_compressed[i])
-	    {
-	      main_result += 1;
-	    }
-	}
-      for (i = 0; i < IN_END; i++)
-	{
-	  if (result[i] != test_result[i])
-	    {
-	      main_result += 1;
-	    }
-	}
-      printf ("%d\n", main_result);
-      return main_result;
-    }

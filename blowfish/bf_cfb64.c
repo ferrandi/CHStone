@@ -78,12 +78,21 @@
  * 64bit block we have used is contained in *num;
  */
 
+#include "blowfish.h"
+
+BF_LONG key_P[BF_ROUNDS + 2];
+BF_LONG key_S[4 * 256];
+
+#include "bf_locl.h"
+#include "bf_pi.h"
+#include "bf_skey.c"
+#include "bf_enc.c"
+
 void
-BF_cfb64_encrypt (in, out, length, ivec, num, encrypt)
-     unsigned char *in;
-     unsigned char *out;
+BF_cfb64_encrypt (in, out, length, num, encrypt)
+     unsigned char in[40];
+     unsigned char out[40];
      long length;
-     unsigned char *ivec;
      int *num;
      int encrypt;
 {
@@ -92,60 +101,77 @@ BF_cfb64_encrypt (in, out, length, ivec, num, encrypt)
   register long l;
   BF_LONG ti[2];
   unsigned char *iv, c, cc;
-
-  n = *num;
-  l = length;
-  iv = (unsigned char *) ivec;
-  if (encrypt)
-    {
-      while (l--)
-	{
-	  if (n == 0)
-	    {
-	      n2l (iv, v0);
-	      ti[0] = v0;
-	      n2l (iv, v1);
-	      ti[1] = v1;
-	      BF_encrypt ((unsigned long *) ti, BF_ENCRYPT);
-	      iv = (unsigned char *) ivec;
-	      t = ti[0];
-	      l2n (t, iv);
-	      t = ti[1];
-	      l2n (t, iv);
-
-	      iv = (unsigned char *) ivec;
-	    }
-	  c = *(in++) ^ iv[n];
-	  *(out++) = c;
-	  iv[n] = c;
-	  n = (n + 1) & 0x07;
-	}
-    }
+  unsigned char ivec[8];
+  
+  if(encrypt == BF_RESET)
+  {
+	  for (n = 0; n < 8; n++)
+      {
+        ivec[n] = 0;
+      }
+    BF_set_key (8, ivec);
+	  for (n = 0; n < 8; n++)
+      {
+        ivec[n] = 0;
+      }
+  }
   else
+  {
+    n = *num;
+    l = length;
+    iv = (unsigned char *) ivec;
+    if (encrypt)
+      {
+        while (l--)
     {
-      while (l--)
-	{
-	  if (n == 0)
-	    {
-	      n2l (iv, v0);
-	      ti[0] = v0;
-	      n2l (iv, v1);
-	      ti[1] = v1;
-	      BF_encrypt ((unsigned long *) ti, BF_ENCRYPT);
-	      iv = (unsigned char *) ivec;
-	      t = ti[0];
-	      l2n (t, iv);
-	      t = ti[1];
-	      l2n (t, iv);
-	      iv = (unsigned char *) ivec;
-	    }
-	  cc = *(in++);
-	  c = iv[n];
-	  iv[n] = cc;
-	  *(out++) = c ^ cc;
-	  n = (n + 1) & 0x07;
-	}
+      if (n == 0)
+        {
+          n2l (iv, v0);
+          ti[0] = v0;
+          n2l (iv, v1);
+          ti[1] = v1;
+          BF_encrypt ((unsigned long *) ti, BF_ENCRYPT);
+          iv = (unsigned char *) ivec;
+          t = ti[0];
+          l2n (t, iv);
+          t = ti[1];
+          l2n (t, iv);
+
+          iv = (unsigned char *) ivec;
+        }
+      c = *(in++) ^ iv[n];
+      *(out++) = c;
+      iv[n] = c;
+      n = (n + 1) & 0x07;
     }
-  v0 = v1 = ti[0] = ti[1] = t = c = cc = 0;
-  *num = n;
+      }
+    else
+      {
+        while (l--)
+    {
+      if (n == 0)
+        {
+          n2l (iv, v0);
+          ti[0] = v0;
+          n2l (iv, v1);
+          ti[1] = v1;
+          BF_encrypt ((unsigned long *) ti, BF_ENCRYPT);
+          iv = (unsigned char *) ivec;
+          t = ti[0];
+          l2n (t, iv);
+          t = ti[1];
+          l2n (t, iv);
+          iv = (unsigned char *) ivec;
+        }
+      cc = *(in++);
+      c = iv[n];
+      iv[n] = cc;
+      *(out++) = c ^ cc;
+      n = (n + 1) & 0x07;
+    }
+      }
+    v0 = v1 = ti[0] = ti[1] = t = c = cc = 0;
+    *num = n;
+  }
+
 }
